@@ -16,6 +16,7 @@ class NotePageMobile extends StatefulWidget {
 
 class _NotePageMobileState extends State<NotePageMobile> {
   late NoteBloc _noteBloc;
+  final Set<int> _shownConflictIds = {};
 
   @override
   void initState() {
@@ -26,6 +27,9 @@ class _NotePageMobileState extends State<NotePageMobile> {
   void _checkForConflicts(List<Map<String, dynamic>> notes) {
     final conflictNotes = notes.where((n) => n['sync_status'] == 'conflict').toList();
     for (final note in conflictNotes) {
+      final noteId = note['id'] as int;
+      if (_shownConflictIds.contains(noteId)) continue;
+      _shownConflictIds.add(noteId);
       showConflictResolutionDialog(context, _noteBloc, note);
     }
   }

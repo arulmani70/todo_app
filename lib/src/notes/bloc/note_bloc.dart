@@ -31,7 +31,7 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
   void _onSyncCompleted() {
     if (!isClosed) {
       _log.d("NoteBloc::Background sync completed, refreshing UI");
-      add(const RefreshNotes());
+      add(const GetAllNotes());
     }
   }
 

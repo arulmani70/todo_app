@@ -84,8 +84,8 @@ class NoteRepository {
 
       if (await _networkService.checkConnectivity()) {
         try {
-          await _pushPendingChanges();
           await _pullRemoteChanges();
+          await _pushPendingChanges();
           return await _dbRepo.getAllNotes();
         } catch (error) {
           log.w("NoteRepository::getAllNotesWithSync::Failed to sync: $error");
@@ -204,8 +204,8 @@ class NoteRepository {
         return;
       }
 
-      await _pushPendingChanges();
       await _pullRemoteChanges();
+      await _pushPendingChanges();
 
       log.d("NoteRepository::syncAllData::Sync completed");
       syncVersion.value++;
@@ -362,6 +362,8 @@ class NoteRepository {
       final remoteUpdatedAt = remoteNote['updatedAt']?.toString();
 
       if (remoteUpdatedAt == null) return;
+
+      if (localSyncStatus == Constants.database.SYNC_STATUS_CONFLICT) return;
 
       bool hasRemoteNewerChanges = _isDateNewer(remoteUpdatedAt, localServerUpdatedAt);
       bool hasLocalPendingChanges = localSyncStatus == Constants.database.SYNC_STATUS_PENDING;
