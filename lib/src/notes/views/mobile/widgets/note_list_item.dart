@@ -12,13 +12,18 @@ class NoteListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final syncStatus = note[Constants.database.COLUMN_SYNC_STATUS]?.toString() ?? Constants.database.SYNC_STATUS_SYNCED;
+    final isConflict = syncStatus == Constants.database.SYNC_STATUS_CONFLICT;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       elevation: 2,
       child: InkWell(
         onTap: () {
-          showNoteFormBottomSheet(context, _noteBloc, note: note);
+          if (isConflict) {
+            showConflictResolutionDialog(context, _noteBloc, note);
+          } else {
+            showNoteFormBottomSheet(context, _noteBloc, note: note);
+          }
         },
         child: Container(
           padding: const EdgeInsets.all(12),
