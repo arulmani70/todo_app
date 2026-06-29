@@ -123,6 +123,11 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
       await _repository.resolveConflict(event.noteId, event.resolution);
       final notes = await _repository.getAllNotes();
       emit(state.copyWith(status: () => NoteStatus.success, message: () => 'Conflict resolved', notes: () => notes));
+
+      if (event.resolution == 'local') {
+        _log.d("NoteBloc::_onResolveConflict::Local resolution, triggering sync");
+        await _repository.syncAllData();
+      }
     } catch (e) {
       _log.e("NoteBloc::_onResolveConflict::Error: $e");
       emit(state.copyWith(status: () => NoteStatus.failure, message: () => e.toString()));

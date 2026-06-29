@@ -158,8 +158,18 @@ class NoteRepository {
       if (localNote == null) return;
 
       if (resolution == 'local') {
+        String? remoteUpdatedAt;
+        final remoteId = localNote[Constants.database.COLUMN_REMOTE_ID]?.toString();
+        if (remoteId != null) {
+          try {
+            final remoteNote = await _apiRepo.getNoteById(remoteId);
+            remoteUpdatedAt = remoteNote?['updatedAt']?.toString();
+          } catch (_) {}
+        }
         await _dbRepo.updateNote(noteId, {
           Constants.database.COLUMN_SYNC_STATUS: Constants.database.SYNC_STATUS_PENDING,
+          if (remoteUpdatedAt != null)
+            Constants.database.COLUMN_SERVER_UPDATED_AT: remoteUpdatedAt,
         });
       } else if (resolution == 'remote') {
         final remoteId = localNote[Constants.database.COLUMN_REMOTE_ID]?.toString();
