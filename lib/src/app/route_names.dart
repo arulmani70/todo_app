@@ -1,5 +1,5 @@
 mixin RouteNames {
-  static const splashscreen = "/";
+  static const splashscreen = "splashscreen";
 
-  static const dashboard = "/todo";
+  static const dashboard = "dashboard";
 }

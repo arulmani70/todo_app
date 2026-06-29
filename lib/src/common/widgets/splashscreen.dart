@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:todo_app/src/app/route_names.dart';
 import 'dart:async';
 
 class SplashScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller.forward();
 
     Timer(const Duration(seconds: 3), () {
-      context.goNamed('/dashboard');
+      context.goNamed(RouteNames.dashboard);
     });
   }
 
@@ -49,16 +50,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.blueAccent, width: 2),
                 ),
-                child: const Center(child: Icon(Icons.supervisor_account, size: 50, color: Colors.blueAccent)),
+                child: const Center(child: Icon(Icons.note_alt_outlined, size: 50, color: Colors.blueAccent)),
               ),
             ),
             const SizedBox(height: 20),
             const Text(
-              "Welcome to Todo App",
+              "Offline Notes",
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             const SizedBox(height: 10),
-            const Text("Managing Todos made easy", style: TextStyle(fontSize: 14, color: Colors.grey)),
+            const Text("Your notes, always available", style: TextStyle(fontSize: 14, color: Colors.grey)),
             const SizedBox(height: 30),
             const CircularProgressIndicator(color: Colors.blueAccent),
           ],

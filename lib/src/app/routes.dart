@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:todo_app/src/app/route_names.dart';
 import 'package:logger/logger.dart';
 import 'package:todo_app/src/common/widgets/splashscreen.dart';
-import 'package:todo_app/src/todo/views/todo_page.dart';
+import 'package:todo_app/src/notes/views/note_page.dart';
 
 class Routes {
   final log = Logger();
@@ -19,10 +19,10 @@ class Routes {
         },
       ),
 
-      GoRoute(name: RouteNames.dashboard, path: '/todo', builder: (context, state) => TodoPage()),
+      GoRoute(name: RouteNames.dashboard, path: '/notes', builder: (context, state) => const NotePage()),
     ],
     redirect: (BuildContext context, GoRouterState state) {
-      return '/todo';
+      return '/notes';
     },
     debugLogDiagnostics: true,
     errorBuilder: (contex, state) {

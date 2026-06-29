@@ -1,25 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo_app/src/common/utils/utils.dart';
-import 'package:todo_app/src/todo/bloc/todo_bloc.dart';
-import 'package:todo_app/src/todo/views/mobile/widgets/todo_form_bottom_sheet.dart';
+import 'package:todo_app/src/notes/bloc/note_bloc.dart';
+import 'package:todo_app/src/notes/views/mobile/widgets/note_form_bottom_sheet.dart';
 
-import 'widgets/todo_list_item.dart';
+import 'widgets/note_list_item.dart';
+import 'widgets/conflict_resolution_dialog.dart';
 
-class TodoPageMobile extends StatefulWidget {
-  const TodoPageMobile({super.key});
+class NotePageMobile extends StatefulWidget {
+  const NotePageMobile({super.key});
 
   @override
-  State<TodoPageMobile> createState() => _TodoPageMobileState();
+  State<NotePageMobile> createState() => _NotePageMobileState();
 }
 
-class _TodoPageMobileState extends State<TodoPageMobile> {
-  late TodoBloc _todoBloc;
+class _NotePageMobileState extends State<NotePageMobile> {
+  late NoteBloc _noteBloc;
 
   @override
   void initState() {
     super.initState();
-    _todoBloc = context.read<TodoBloc>();
+    _noteBloc = context.read<NoteBloc>();
+  }
+
+  void _checkForConflicts(List<Map<String, dynamic>> notes) {
+    final conflictNotes = notes.where((n) => n['sync_status'] == 'conflict').toList();
+    for (final note in conflictNotes) {
+      showConflictResolutionDialog(context, _noteBloc, note);
+    }
   }
 
   @override
@@ -29,16 +37,21 @@ class _TodoPageMobileState extends State<TodoPageMobile> {
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.surface,
-          title: const Text('Todos'),
-          actions: [IconButton(onPressed: () => _todoBloc.add(const RefreshTodos()), icon: const Icon(Icons.sync))],
+          title: const Text('Notes'),
+          actions: [
+            IconButton(onPressed: () => _noteBloc.add(const RefreshNotes()), icon: const Icon(Icons.sync)),
+          ],
         ),
-        body: BlocConsumer<TodoBloc, TodoState>(
+        body: BlocConsumer<NoteBloc, NoteState>(
           listener: (context, state) {
-            if (state.status == TodoStatus.failure) {
+            if (state.status == NoteStatus.failure) {
               ToastUtil.showErrorToast(context, state.message);
             }
-            if (state.status == TodoStatus.success) {
+            if (state.status == NoteStatus.success) {
               ToastUtil.showSuccessToast(context, state.message);
+            }
+            if (state.status == NoteStatus.loaded || state.status == NoteStatus.success) {
+              _checkForConflicts(state.notes);
             }
           },
           builder: (context, state) {
@@ -46,21 +59,21 @@ class _TodoPageMobileState extends State<TodoPageMobile> {
               color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
               child: Column(
                 children: [
-                  if (state.status == TodoStatus.loading)
+                  if (state.status == NoteStatus.loading)
                     const LinearProgressIndicator(color: Colors.blue, backgroundColor: Colors.grey, minHeight: 5),
                   Expanded(
-                    child: BlocBuilder<TodoBloc, TodoState>(
+                    child: BlocBuilder<NoteBloc, NoteState>(
                       builder: (context, state) {
-                        if (state.todos.isEmpty && state.status != TodoStatus.loading) {
+                        if (state.notes.isEmpty && state.status != NoteStatus.loading) {
                           return const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.task_alt, size: 64, color: Colors.grey),
+                                Icon(Icons.note_alt_outlined, size: 64, color: Colors.grey),
                                 SizedBox(height: 16),
-                                Text('No todos yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                                Text('No notes yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
                                 SizedBox(height: 8),
-                                Text('Tap the + button to add your first todo', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                                Text('Tap the + button to add your first note', style: TextStyle(fontSize: 14, color: Colors.grey)),
                               ],
                             ),
                           );
@@ -68,10 +81,10 @@ class _TodoPageMobileState extends State<TodoPageMobile> {
 
                         return ListView.builder(
                           shrinkWrap: true,
-                          itemCount: state.todos.length,
+                          itemCount: state.notes.length,
                           itemBuilder: (context, index) {
-                            final todo = state.todos[index];
-                            return TodoListItem(todo: todo, todoBloc: _todoBloc);
+                            final note = state.notes[index];
+                            return NoteListItem(note: note, noteBloc: _noteBloc);
                           },
                         );
                       },
@@ -84,7 +97,7 @@ class _TodoPageMobileState extends State<TodoPageMobile> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            showTodoFormBottomSheet(context, _todoBloc);
+            showNoteFormBottomSheet(context, _noteBloc);
           },
           backgroundColor: Theme.of(context).primaryColor,
           foregroundColor: Colors.white,

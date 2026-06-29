@@ -8,8 +8,9 @@ import 'package:logger/logger.dart';
 class DatabaseRepository {
   final Logger log = Logger();
   static Database? _database;
-  static const String _databaseName = "todo_app.db";
-  static const int _databaseVersion = 2;
+
+  static const String _databaseName = "notes_app.db";
+  static const int _databaseVersion = 1;
 
   static final DatabaseRepository _instance = DatabaseRepository._internal();
   factory DatabaseRepository() => _instance;
@@ -63,7 +64,12 @@ class DatabaseRepository {
 
       return await databaseFactory.openDatabase(
         dbPath,
-        options: OpenDatabaseOptions(version: _databaseVersion, onCreate: _onCreate, onUpgrade: _onUpgrade, onDowngrade: _onDowngrade),
+        options: OpenDatabaseOptions(
+          version: _databaseVersion,
+          onCreate: _onCreate,
+          onUpgrade: _onUpgrade,
+          onDowngrade: _onDowngrade,
+        ),
       );
     } catch (error) {
       log.e("DatabaseRepository::_initDatabase::Error: $error");
@@ -87,17 +93,15 @@ class DatabaseRepository {
     try {
       log.d("DatabaseRepository::_onCreate::Creating database tables...");
 
-      final createTableSQL =
-          '''
-        CREATE TABLE ${Constants.database.TABLE_TODOS} (
+      final createTableSQL = '''
+        CREATE TABLE ${Constants.database.TABLE_NOTES} (
           ${Constants.database.COLUMN_ID} INTEGER PRIMARY KEY AUTOINCREMENT,
-          ${Constants.database.COLUMN_TODO_TITLE} TEXT NOT NULL,
-          ${Constants.database.COLUMN_TODO_DESCRIPTION} TEXT,
-          ${Constants.database.COLUMN_TODO_IS_COMPLETED} INTEGER DEFAULT 0,
-          ${Constants.database.COLUMN_TODO_PRIORITY} TEXT DEFAULT '${Constants.database.PRIORITY_MEDIUM}',
-          ${Constants.database.COLUMN_TODO_DUE_DATE} TEXT,
-          ${Constants.database.COLUMN_FIRESTORE_ID} TEXT,
-          ${Constants.database.COLUMN_NEEDS_SYNC} INTEGER DEFAULT 0,
+          ${Constants.database.COLUMN_REMOTE_ID} TEXT,
+          ${Constants.database.COLUMN_TITLE} TEXT NOT NULL,
+          ${Constants.database.COLUMN_BODY} TEXT,
+          ${Constants.database.COLUMN_SYNC_STATUS} TEXT DEFAULT '${Constants.database.SYNC_STATUS_PENDING}',
+          ${Constants.database.COLUMN_LOCAL_VERSION} INTEGER DEFAULT 1,
+          ${Constants.database.COLUMN_SERVER_UPDATED_AT} TEXT,
           ${Constants.database.COLUMN_CREATED_AT} TEXT NOT NULL,
           ${Constants.database.COLUMN_UPDATED_AT} TEXT NOT NULL,
           ${Constants.database.COLUMN_IS_DELETED} INTEGER DEFAULT 0
@@ -117,18 +121,6 @@ class DatabaseRepository {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     try {
       log.d("DatabaseRepository::_onUpgrade::Upgrading database from $oldVersion to $newVersion");
-
-      if (oldVersion < 2) {
-        log.d("DatabaseRepository::_onUpgrade::Adding sync columns");
-
-        await db.execute('ALTER TABLE ${Constants.database.TABLE_TODOS} ADD COLUMN ${Constants.database.COLUMN_FIRESTORE_ID} TEXT');
-        log.d("DatabaseRepository::_onUpgrade::Added firestore_id column");
-
-        await db.execute('ALTER TABLE ${Constants.database.TABLE_TODOS} ADD COLUMN ${Constants.database.COLUMN_NEEDS_SYNC} INTEGER DEFAULT 0');
-        log.d("DatabaseRepository::_onUpgrade::Added needs_sync column");
-      }
-
-      log.d("DatabaseRepository::_onUpgrade::Database upgrade completed");
     } catch (error) {
       log.e("DatabaseRepository::_onUpgrade::Error: $error");
       rethrow;
@@ -138,8 +130,6 @@ class DatabaseRepository {
   Future<void> _onDowngrade(Database db, int oldVersion, int newVersion) async {
     try {
       log.d("DatabaseRepository::_onDowngrade::Downgrading database from $oldVersion to $newVersion");
-
-      log.d("DatabaseRepository::_onDowngrade::Database downgrade completed");
     } catch (error) {
       log.e("DatabaseRepository::_onDowngrade::Error: $error");
       rethrow;
@@ -244,7 +234,10 @@ class DatabaseRepository {
 
       log.d("DatabaseRepository::softDelete::Soft deleting from $table where: $where");
 
-      final data = {Constants.database.COLUMN_IS_DELETED: 1, Constants.database.COLUMN_UPDATED_AT: DateTime.now().toUtc().toIso8601String()};
+      final data = {
+        Constants.database.COLUMN_IS_DELETED: 1,
+        Constants.database.COLUMN_UPDATED_AT: DateTime.now().toUtc().toIso8601String(),
+      };
 
       final count = await db.update(table, data, where: where, whereArgs: whereArgs);
 
