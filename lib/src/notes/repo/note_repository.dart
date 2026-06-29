@@ -299,6 +299,8 @@ class NoteRepository {
       final remoteNotes = await _apiRepo.getAllNotes();
       log.d("NoteRepository::_pullRemoteChanges::Fetched ${remoteNotes.length} remote notes");
 
+      final remoteIds = remoteNotes.map((n) => n['id']?.toString()).whereType<String>().toSet();
+
       for (final remoteNote in remoteNotes) {
         final remoteId = remoteNote['id']?.toString();
         if (remoteId == null) continue;
@@ -309,6 +311,20 @@ class NoteRepository {
           await _createLocalFromRemote(remoteNote, remoteId);
         } else {
           await _mergeNoteIfNeeded(localNote, remoteNote);
+        }
+      }
+
+      final allLocalNotes = await _dbRepo.getAllNotes();
+      for (final localNote in allLocalNotes) {
+        final remoteId = localNote[Constants.database.COLUMN_REMOTE_ID]?.toString();
+        if (remoteId == null || remoteId.isEmpty) continue;
+
+        if (!remoteIds.contains(remoteId)) {
+          final syncStatus = localNote[Constants.database.COLUMN_SYNC_STATUS]?.toString();
+          if (syncStatus == Constants.database.SYNC_STATUS_SYNCED) {
+            await _dbRepo.deleteNotePermanently(localNote[Constants.database.COLUMN_ID] as int);
+            log.d("NoteRepository::_pullRemoteChanges::Removed local note deleted from server: $remoteId");
+          }
         }
       }
     } catch (error) {
