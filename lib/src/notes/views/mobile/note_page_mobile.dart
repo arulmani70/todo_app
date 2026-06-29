@@ -5,7 +5,6 @@ import 'package:todo_app/src/notes/bloc/note_bloc.dart';
 import 'package:todo_app/src/notes/views/mobile/widgets/note_form_bottom_sheet.dart';
 
 import 'widgets/note_list_item.dart';
-import 'widgets/conflict_resolution_dialog.dart';
 
 class NotePageMobile extends StatefulWidget {
   const NotePageMobile({super.key});
@@ -16,22 +15,11 @@ class NotePageMobile extends StatefulWidget {
 
 class _NotePageMobileState extends State<NotePageMobile> {
   late NoteBloc _noteBloc;
-  final Set<int> _shownConflictIds = {};
 
   @override
   void initState() {
     super.initState();
     _noteBloc = context.read<NoteBloc>();
-  }
-
-  void _checkForConflicts(List<Map<String, dynamic>> notes) {
-    final conflictNotes = notes.where((n) => n['sync_status'] == 'conflict').toList();
-    for (final note in conflictNotes) {
-      final noteId = note['id'] as int;
-      if (_shownConflictIds.contains(noteId)) continue;
-      _shownConflictIds.add(noteId);
-      showConflictResolutionDialog(context, _noteBloc, note);
-    }
   }
 
   @override
@@ -53,9 +41,6 @@ class _NotePageMobileState extends State<NotePageMobile> {
             }
             if (state.status == NoteStatus.success) {
               ToastUtil.showSuccessToast(context, state.message);
-            }
-            if (state.status == NoteStatus.loaded || state.status == NoteStatus.success) {
-              _checkForConflicts(state.notes);
             }
           },
           builder: (context, state) {

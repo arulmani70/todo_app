@@ -161,10 +161,6 @@ class NoteRepository {
         await _dbRepo.updateNote(noteId, {
           Constants.database.COLUMN_SYNC_STATUS: Constants.database.SYNC_STATUS_PENDING,
         });
-
-        if (await _networkService.checkConnectivity()) {
-          await _syncSingleNoteToServer(noteId);
-        }
       } else if (resolution == 'remote') {
         final remoteId = localNote[Constants.database.COLUMN_REMOTE_ID]?.toString();
         if (remoteId != null) {
