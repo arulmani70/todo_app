@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:todo_app/src/common/repos/api_repository.dart';
 import 'package:todo_app/src/common/services/network_service.dart';
@@ -10,6 +11,8 @@ class NoteRepository {
   final ApiRepository _apiRepo = ApiRepository();
   final NetworkService _networkService = NetworkService();
   bool _isSyncing = false;
+
+  final ValueNotifier<int> syncVersion = ValueNotifier<int>(0);
 
   Future<void> initialize() async {
     try {
@@ -25,6 +28,11 @@ class NoteRepository {
           log.d("NoteRepository::initialize::Network went offline");
         }
       });
+
+      if (_networkService.isOnline) {
+        log.d("NoteRepository::initialize::Already online, triggering initial sync");
+        _triggerSync();
+      }
 
       log.d("NoteRepository::initialize::Repositories initialized successfully");
     } catch (error) {
@@ -200,6 +208,7 @@ class NoteRepository {
       await _pullRemoteChanges();
 
       log.d("NoteRepository::syncAllData::Sync completed");
+      syncVersion.value++;
     } catch (error) {
       log.e("NoteRepository::syncAllData::Error: $error");
       rethrow;
@@ -388,6 +397,7 @@ class NoteRepository {
   }
 
   void dispose() {
+    syncVersion.dispose();
     _networkService.dispose();
   }
 }

@@ -22,6 +22,7 @@ class NetworkService {
     try {
       log.d("NetworkService::initialize::Starting network monitoring");
 
+      _networkStatusController = StreamController<bool>.broadcast();
       await _checkConnectivity();
 
       _connectivitySubscription = _connectivity.onConnectivityChanged.listen(

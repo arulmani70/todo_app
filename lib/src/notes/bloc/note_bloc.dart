@@ -17,10 +17,29 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
     on<DeleteNote>(_onDeleteNote);
     on<RefreshNotes>(_onRefreshNotes);
     on<ResolveConflict>(_onResolveConflict);
+
+    _repository.syncVersion.addListener(_onSyncCompleted);
+    if (_repository.syncVersion.value > 0) {
+      _log.d("NoteBloc::Sync already completed before subscription, refreshing UI");
+      add(const RefreshNotes());
+    }
   }
 
   final NoteRepository _repository;
   final _log = Logger();
+
+  void _onSyncCompleted() {
+    if (!isClosed) {
+      _log.d("NoteBloc::Background sync completed, refreshing UI");
+      add(const RefreshNotes());
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _repository.syncVersion.removeListener(_onSyncCompleted);
+    return super.close();
+  }
 
   Future<void> _onInitializeNotes(InitializeNotes event, Emitter<NoteState> emit) async {
     _log.d("NoteBloc::_onInitializeNotes::Initializing notes");
